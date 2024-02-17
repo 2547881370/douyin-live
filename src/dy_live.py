@@ -12,7 +12,7 @@ import re
 import time
 import requests
 import websocket
-from src.utils.ws_send import ws_send, ws_sender
+from src.utils.ws_send import ws_sender
 from src import live_rank
 from src.utils.common import GlobalVal
 from protobuf_inspector.types import StandardParser
@@ -149,6 +149,13 @@ def unPackWebcastSocialMessage(data):
     logger.info('[unPackWebcastSocialMessage] [➕直播间关注消息] [房间Id：' + liveRoomId + '] | ' + log)
     return data
 
+def sendMessage(value,type):
+    messageData = {
+        "value" : value,
+        "type" : type
+    }
+    ws_sender(json.dumps(messageData))
+
 
 # 普通消息
 def unPackWebcastChatMessage(data):
@@ -159,6 +166,16 @@ def unPackWebcastChatMessage(data):
     log = json.dumps(data, ensure_ascii=False)
     logger.info(
         f'[unPackWebcastChatMessage] [直播间弹幕消息{GlobalVal.commit_num}] [房间Id：' + liveRoomId + '] | ' + log)
+    
+    # 拼接普通消息
+    sendMessage(
+        {
+            "personName" : data.get("user").get("nickName"),
+            "text" : data.get("content")
+        },
+        "newComment"
+    )
+    
     return data
 
 
@@ -181,7 +198,7 @@ def unPackWebcastGiftMessage(data):
         GlobalVal.gift_num += int(data.get("totalCount", 1))
         GlobalVal.gift_value += (int(data["gift"]["diamondCount"]) * int(data.get("totalCount", 1)))
         # 将消息发送到我们自己的服务器:websocket链接
-        ws_sender(f"收到礼物: {gift_name}，礼物数量:{GlobalVal.gift_num}，礼物价值: {GlobalVal.gift_value}")
+        # ws_sender(f"收到礼物: {gift_name}，礼物数量:{GlobalVal.gift_num}，礼物价值: {GlobalVal.gift_value}")
     except Exception as e:
         logger.error(f"解析礼物数据出错: {e}")
     log = json.dumps(data, ensure_ascii=False)
@@ -200,6 +217,16 @@ def unPackWebcastMemberMessage(data):
     member_num = int(data.get("memberCount", 0))
     log = json.dumps(data, ensure_ascii=False)
     logger.info(f'[unPackWebcastMemberMessage] [直播间成员加入: {member_num}] [房间Id：' + liveRoomId + '] | ' + log)
+    
+    # 拼接普通消息
+    sendMessage(
+            data.get("user").get("nickName"),
+            "newPerson"
+    )
+    sendMessage(
+            member_num,
+            "personNum"
+    )
     return data
 
 

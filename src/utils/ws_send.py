@@ -5,9 +5,6 @@ from config import LIVE_WEB_SEND
 
 def on_open(ws):
     print("连接已建立")
-    # 发送消息给服务器
-    ws.send("Hello, server!")
-
 
 def on_message(ws, message):
     print("收到服务端的消息：", message)
@@ -33,7 +30,7 @@ def ws_sender(msg):
 
 
 # 创建WebSocket连接
-ws_send = websocket.WebSocketApp("ws://192.168.110.196:8989/echo",
+ws_send = websocket.WebSocketApp("ws://127.0.0.1:9999",
                                  on_open=on_open,
                                  on_message=on_message,
                                  on_close=on_close,
